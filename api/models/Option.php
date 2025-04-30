@@ -85,7 +85,7 @@ class Option {
         return false;
     }
 
-    public function readByQuestionId() {
+    public function getOptionsByQuestionId() {
         $query = "SELECT * FROM " . $this->dbTable . " WHERE question_id=:question_id";
         $stmt = $this->dbConnection->prepare($query);
         $stmt->bindParam(":question_id", $this->question_id);
@@ -116,5 +116,18 @@ class Option {
             return true;
         }
         return false;
+    }
+
+    public function validateOption($option_id, $question_id) {
+        $query = "SELECT is_correct FROM " . $this->dbTable . " WHERE option_id = :option_id AND question_id = :question_id";
+        $stmt = $this->dbConnection->prepare($query);
+        $stmt->bindParam(":option_id", $option_id);
+        $stmt->bindParam(":question_id", $question_id);
+        $stmt->execute();
+        
+        if ($stmt->rowCount() == 0) {
+            return null;
+        }
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }

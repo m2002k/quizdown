@@ -1,6 +1,7 @@
 <?php
 
-class Quiz {
+class Quiz
+{
     private $quiz_id;
     private $quiz_code;
     private $title;
@@ -8,46 +9,56 @@ class Quiz {
     private $dbConnection;
     private $dbTable = 'quizzes';
 
-    public function __construct($dbConnection) {
+    public function __construct($dbConnection)
+    {
         $this->dbConnection = $dbConnection;
     }
 
     // Getters
-    public function getQuizId() {
+    public function getQuizId()
+    {
         return $this->quiz_id;
     }
-    
-    public function getQuizCode() {
+
+    public function getQuizCode()
+    {
         return $this->quiz_code;
     }
-    
-    public function getTitle() {
+
+    public function getTitle()
+    {
         return $this->title;
     }
-    
-    public function getCreatedAt() {
+
+    public function getCreatedAt()
+    {
         return $this->created_at;
     }
 
     // Setters
-    public function setQuizId($quiz_id) {
+    public function setQuizId($quiz_id)
+    {
         $this->quiz_id = $quiz_id;
     }
-    
-    public function setQuizCode($quiz_code) {
+
+    public function setQuizCode($quiz_code)
+    {
         $this->quiz_code = $quiz_code;
     }
-    
-    public function setTitle($title) {
+
+    public function setTitle($title)
+    {
         $this->title = $title;
     }
-    
-    public function setCreatedAt($created_at) {
+
+    public function setCreatedAt($created_at)
+    {
         $this->created_at = $created_at;
     }
 
     // CRUD Operations
-    public function create() {
+    public function create()
+    {
         $query = "INSERT INTO " . $this->dbTable . "(quiz_code, title) VALUES(:quiz_code, :title)";
         $stmt = $this->dbConnection->prepare($query);
         $stmt->bindParam(":quiz_code", $this->quiz_code);
@@ -58,8 +69,9 @@ class Quiz {
         printf("Error: %s", $stmt->error);
         return false;
     }
-
-    public function readOne() {
+    // Find Quiz by ID
+    public function findById()
+    {
         $query = "SELECT * FROM " . $this->dbTable . " WHERE quiz_id=:quiz_id";
         $stmt = $this->dbConnection->prepare($query);
         $stmt->bindParam(":quiz_id", $this->quiz_id);
@@ -74,7 +86,21 @@ class Quiz {
         return false;
     }
 
-    public function readAll() {
+    // Find quiz by code
+    public function findByCode($quiz_code)
+    {
+        $query = "SELECT * FROM " . $this->dbTable . " WHERE quiz_code = :quiz_code";
+        $stmt = $this->dbConnection->prepare($query);
+        $stmt->bindParam(":quiz_code", $quiz_code);
+
+        if ($stmt->execute() && $stmt->rowCount() > 0) {
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+        return null;
+    }
+
+    public function findAll()
+    {
         $query = "SELECT * FROM " . $this->dbTable;
         $stmt = $this->dbConnection->prepare($query);
         if ($stmt->execute() && $stmt->rowCount() > 0) {
@@ -83,7 +109,8 @@ class Quiz {
         return [];
     }
 
-    public function update() {
+    public function update()
+    {
         $query = "UPDATE " . $this->dbTable . " SET quiz_code=:quiz_code, title=:title WHERE quiz_id=:quiz_id";
         $stmt = $this->dbConnection->prepare($query);
         $stmt->bindParam(":quiz_code", $this->quiz_code);
@@ -95,7 +122,8 @@ class Quiz {
         return false;
     }
 
-    public function delete() {
+    public function delete()
+    {
         $query = "DELETE FROM " . $this->dbTable . " WHERE quiz_id=:quiz_id";
         $stmt = $this->dbConnection->prepare($query);
         $stmt->bindParam(":quiz_id", $this->quiz_id);
@@ -103,5 +131,55 @@ class Quiz {
             return true;
         }
         return false;
+    }
+    // handle quiz submission
+    public function submitQuiz($quiz_code, $answers)
+    {
+        try {
+            // Begin transaction
+            $this->dbConnection->beginTransaction();
+
+            // Find quiz
+            $quizData = $this->findByCode($quiz_code);
+            if (!$quizData) {
+                $this->dbConnection->rollBack();
+                return ["error" => "Quiz not found", "code" => 404];
+            }
+
+            $option = new Option($this->dbConnection);
+            $submission = new Submission($this->dbConnection);
+
+            foreach ($answers as $answer) {
+                if (!isset($answer['question_id']) || !isset($answer['selected_option_id'])) {
+                    $this->dbConnection->rollBack();
+                    return ["error" => "Invalid answer format", "code" => 400];
+                }
+
+                // Validate option
+                $result = $option->validateOption($answer['selected_option_id'], $answer['question_id']);
+                if ($result === null) {
+                    $this->dbConnection->rollBack();
+                    return ["error" => "Invalid option ID", "code" => 400];
+                }
+
+                // Record submission
+                $submission->setQuizId($quizData['quiz_id']);
+                $submission->setQuestionId($answer['question_id']);
+                $submission->setIsCorrect($result['is_correct']);
+
+                if (!$submission->create()) {
+                    $this->dbConnection->rollBack();
+                    return ["error" => "Failed to save submission", "code" => 500];
+                }
+            }
+
+            $this->dbConnection->commit();
+            return ["message" => "Quiz submitted successfully", "code" => 200];
+        } catch (PDOException $e) {
+            if ($this->dbConnection->inTransaction()) {
+                $this->dbConnection->rollBack();
+            }
+            throw $e;
+        }
     }
 }
