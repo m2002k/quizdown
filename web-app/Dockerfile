@@ -7,4 +7,4 @@ COPY . .
 ARG PORT=5173
 ENV PORT $PORT
 EXPOSE $PORT
-CMD ["npx", "nodemon", "--exec", "npm install && npm run dev", "--watch", "package.json"]
+CMD npm run dev -- --host --port $PORT
