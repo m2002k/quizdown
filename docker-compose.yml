@@ -79,7 +79,7 @@ services:
     image: react_app_image
     container_name: react_container
     ports:
-      - ${REACT_APP_PORT}:${REACT_APP_PORT}
+      - "${REACT_APP_PORT}:${REACT_APP_PORT}"
     volumes:
       - ./web-app:/app
       - /app/node_modules
