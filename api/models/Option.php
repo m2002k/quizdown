@@ -85,10 +85,10 @@ class Option {
         return false;
     }
 
-    public function getOptionsByQuestionId() {
+    public function getOptionsByQuestionId($question_id) {
         $query = "SELECT * FROM " . $this->dbTable . " WHERE question_id=:question_id";
         $stmt = $this->dbConnection->prepare($query);
-        $stmt->bindParam(":question_id", $this->question_id);
+        $stmt->bindParam(":question_id", $question_id);
         if ($stmt->execute() && $stmt->rowCount() > 0) {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }

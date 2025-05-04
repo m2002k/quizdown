@@ -49,14 +49,21 @@ if ($uri[0] !== 'api') {
 try {
     switch ($method) {
         case 'GET':
-            if (count($uri) === 3 && $uri[1] === 'quiz') {
-                // GET /api/quiz/{quiz_code}
+            // GET /api/health
+            if (count($uri) === 2 && $uri[1] === 'health'){
+                http_response_code(200);
+                echo json_encode(['status' => 'OK']);
+                exit();
+            }
+            // GET /api/quiz/{quiz_code}
+            else if (count($uri) === 3 && $uri[1] === 'quiz') {
                 $studentController = new StudentController();
                 $result = $studentController->getQuiz($uri[2]);
                 http_response_code($result['code'] ?? 200);
                 echo json_encode($result);
-            } else if (count($uri) === 4 && $uri[1] === 'quiz' && $uri[3] === 'stats') {
-                // GET /api/quiz/{quiz_code}/stats
+            } 
+            // GET /api/quiz/{quiz_code}/stats
+            else if (count($uri) === 4 && $uri[1] === 'quiz' && $uri[3] === 'stats') {
                 $instructorController = new InstructorController();
                 $result = $instructorController->getQuizStats($uri[2]);
                 http_response_code($result['code'] ?? 200);

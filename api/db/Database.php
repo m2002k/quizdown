@@ -11,7 +11,7 @@ class Database {
     public function __construct()
     {
         // read database credentials from the environment
-        $this->dbHost = 'localhost'; //getenv('POSTGRES_HOST');
+        $this->dbHost = getenv('POSTGRES_HOST');
         $this->dbPort = getenv('POSTGRES_PORT');
         $this->dbName = getenv('POSTGRES_DB');
         $this->dbUser = getenv('POSTGRES_USER');
