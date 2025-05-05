@@ -12,7 +12,7 @@ class Database {
     {
         // read database credentials from the environment
         $this->dbHost = getenv('POSTGRES_HOST');
-        $this->dbPort = getenv('POSTGRES_PORT');
+        $this->dbPort = getenv('POSTGRES_PORT') ?: 5432;
         $this->dbName = getenv('POSTGRES_DB');
         $this->dbUser = getenv('POSTGRES_USER');
         $this->dbPassword = getenv('POSTGRES_PASSWORD');
